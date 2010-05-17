@@ -35,23 +35,31 @@ end
 # user facing
 get '/' do 
   @hosts = CollectdJSON.hosts
-  haml :index
+  @groups = Visage::Config::Groups.all
+  
+  haml :corporate
 end
 
 get '/:host' do 
   @hosts = CollectdJSON.hosts
+  @groups = Visage::Config::Groups.all
+  Visage::Config::Profiles.profiles = Visage::Config.get(params[:host])
   @profiles = Visage::Config::Profiles.all
-
-  haml :index
+  
+  
+  haml :corporate
 end
 
 get '/:host/:profile' do 
   @hosts = CollectdJSON.hosts
+  @groups = Visage::Config::Groups.all
   @profiles = Visage::Config::Profiles.all
   @profile = Visage::Config::Profiles.get(params[:profile])
   
-  haml :index
+  haml :corporate
 end
+
+
 
 # JSON data backend
 

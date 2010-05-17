@@ -3,6 +3,8 @@
 __DIR__ = File.expand_path(File.dirname(__FILE__))
 require File.join(__DIR__, '..', 'lib', 'visage-config')
 
+require 'yaml'
+
 Visage::Config.use do |c|
   c['fallback_colors'] = YAML::load(File.read(File.join(__DIR__, 'fallback-colors.yaml')))
  
@@ -29,5 +31,20 @@ Visage::Config.use do |c|
 
   # whether to shade in graphs
   c['shade'] = false
+  
+  # groups, to have fewer hosts displayed at the same time
+  c['groups']={}
+  groups_config_filename = File.join(__DIR__, 'groups.yaml')
+  unless File.exists?(groups_config_filename)
+    puts "You need to have a groups config file ! Exiting"
+    exit 1
+  end
+  YAML::load(File.read(groups_config_filename)).each_pair { |key,value|
+    hosts=value.split
+    hosts.each { |h|
+      c['groups'][h]=key
+    }
+  }
 end
+
 

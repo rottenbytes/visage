@@ -16,6 +16,14 @@ module Visage
         end
       end
 
+      def get(profilename)
+        if @configuration.has_key? profilename then
+            @configuration[profilename]
+        else
+            @configuration["profiles"]
+        end
+      end
+
       def to_hash
         @configuration
       end
@@ -46,6 +54,32 @@ module Visage
         end
       end
     end
-
+    
+    class Groups
+        class << self
+        
+        require 'dbi'
+        attr_accessor :groups
+        
+        def all
+            hosts_groups = Visage::Config.groups
+            @groups = {}
+            
+            @hosts = CollectdJSON.hosts
+            @hosts.each { |h|
+                group = hosts_groups[h]
+                if !@groups.has_key?(group) then
+                    @groups[group]=[]
+                end
+                @groups[group].push h
+                
+            }
+            
+            @groups.delete nil
+            @groups
+        end
+        end
+    end
+    
   end
 end
