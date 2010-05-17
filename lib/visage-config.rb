@@ -58,7 +58,6 @@ module Visage
     class Groups
         class << self
         
-        require 'dbi'
         attr_accessor :groups
         
         def all
