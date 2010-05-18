@@ -35,9 +35,8 @@ end
 # user facing
 get '/' do 
   @hosts = CollectdJSON.hosts
-  @groups = Visage::Config::Groups.all
-  
-  haml :corporate
+   
+  haml :index
 end
 
 # sets of scattered graphs
@@ -53,6 +52,12 @@ get '/sets/:set' do
     haml :sets
 end
 
+get '/groups' do 
+  @hosts = CollectdJSON.hosts
+  @groups = Visage::Config::Groups.all
+  
+  haml :corporate
+end
 
 get '/:host' do 
   @hosts = CollectdJSON.hosts

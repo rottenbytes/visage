@@ -13,3 +13,8 @@ function showHide(divId)
         document.getElementById(divId).style.display="block";
     }
 }
+
+function jumpto(selected) {
+	parent.location.href = "/"+selected
+}
+

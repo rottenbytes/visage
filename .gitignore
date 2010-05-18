@@ -1,4 +1,6 @@
 config/profiles.yaml
+config/groups.yaml
+config/sets.yaml
 .DS_Store
 log/*
 tmp/*
