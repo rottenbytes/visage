@@ -80,5 +80,15 @@ module Visage
         end
     end
     
+    class Sets
+        class << self
+        attr_accessor :sets
+        
+            def all
+                Visage::Config.sets
+            end
+        end
+    end
+    
   end
 end

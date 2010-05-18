@@ -45,6 +45,16 @@ Visage::Config.use do |c|
       c['groups'][h]=key
     }
   }
+  
+  # sets, to aggregate graphs with particular metrics from different machines
+  c['sets']={}
+  sets_filename = File.join(__DIR__, 'sets.yaml')
+  unless File.exists?(sets_filename)
+    puts "You need to have a sets config file ! Exiting"
+    exit 1
+  end
+  YAML::load(File.read(sets_filename)).each_pair { |key, value|
+    c['sets'][key]=value
+  }
+  
 end
-
-

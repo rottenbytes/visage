@@ -40,6 +40,20 @@ get '/' do
   haml :corporate
 end
 
+# sets of scattered graphs
+get '/sets' do
+    @sets = Visage::Config::Sets.all
+
+    haml :sets
+end
+
+get '/sets/:set' do
+    @sets = Visage::Config::Sets.all
+
+    haml :sets
+end
+
+
 get '/:host' do 
   @hosts = CollectdJSON.hosts
   @groups = Visage::Config::Groups.all

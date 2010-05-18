@@ -1,0 +1,36 @@
+%div#nav
+  %div#groups.nav
+    %h2 Sets
+    %ul
+      - if !Visage::Config.rrddir
+        %li
+          You need to specify <strong>rrddir</strong> in config/init.rb!
+      - elsif @sets.empty?
+        %li
+          No sets found. Please check your sets config file (see config/init.rb)
+      - else
+        - @sets.each_key do |set|
+          %p.set
+          %a{:href => "/sets/"+set } #{set.capitalize}
+          
+
+  - if set = params[:set]
+    - @sets[set]["graphs"].each do |hosts|
+      - hosts.each_pair do |host,metrics|
+        - metrics.each do |metric|
+          - graph_id = "graph#"+host+"_"+metric
+          %div.graph
+            %div{:id => graph_id}
+            :javascript
+              window.addEvent('domready', function() {
+                var graph = new visageGraph('#{graph_id}', '#{host}', '#{metric}', {
+                  width: 900,
+                  height: 220,
+                  gridWidth: 800,
+                  gridHeight: 200,
+                  shade: #{Visage::Config.shade || false},
+                  pluginInstance: '""',
+                  name: '#{metric} on #{host}'
+                });
+              });
+
