@@ -14,7 +14,7 @@ Features
  * drop-down or mouse selection of timeframes (also rendered asynchronously)
  * JSON interface onto `collectd` RRDs
 
-Check out [http://visage.unstated.net/nadia/cpu+load](a demo).
+Check out [http://visage.unstated.net/nadia/cpu+load] (a demo).
 
 Dependencies
 ------------
@@ -29,7 +29,7 @@ stable Linux distribution.
 
 System (install with your system's package manager):
 
- * git, librrd-dev, ruby, rubygems
+ * git, librrd-dev, ruby, rubygems, librrd-ruby
 
 
 Installing
@@ -70,17 +70,11 @@ with something like `cpu-0/cpu-system/cpu-user/cpu-wait`.
 It should be pretty easy to deduce the config format from the existing file
 (it's simple nested key-value data).
 
+all the config/*-profiles.yaml are automatically glob-ed in. You can easily do a per host profiles file this way.
+
 Make sure collectd's RRD directory is readable by whatever user the web server
 is running as. You can specify where collectd's rrd directory is in `init.rb`,
 with the `c['rrddir']` key.
-
-Developing
-----------
-
-For development:
-
-    $ gem install shotgun
-    $ shotgun visage.rb
 
 Deploying
 ---------
@@ -111,27 +105,37 @@ This assumes you have a checkout of the code at `/srv/www/visage.example.org/roo
 If you don't want to use Apache + Passenger, you can install the `thin` or
 `mongrel` gems and run up a web server yourself.
 
-Ubuntu users looking for Passenger packages should add John Ferlito's
-[mod-passenger PPA](https://launchpad.net/~johnf-inodes/+archive/mod-passenger)
-to their apt sources.
+Samples for config files :
+-----------
 
-Testing
--------
+Example of config/groups.yaml :
+    ---
+    infra:
+      fluor
+      magnesium
 
-Run all cucumber features:
-
-    $ rake cucumber
-
-Specific features:
-
-    $ bin/cucumber --require features/ features/something.feature
-
-TODO
-----
-
- * refactor tests to work on hosts other than my laptop
- * interface to build custom graph profiles
- * combine graphs from different hosts
- * detailed point-in-time data on hover
- * comment on time periods
- * view list of comments
+    services:
+      uranium
+      azote
+      
+Example of config/sets.yaml :
+    ---
+    databases:
+      graphs:
+        - mysqlnode1:
+          - cpu-0
+        - mysqlnode2:
+          - cpu-0
+        - mysqlpra:
+          - cpu-0
+    www-related:
+        graphs:
+          - carbone:
+            - interface
+          - fluor:
+            - interface
+          - magnesium:
+            - interface
+          - mazerati:
+            - interface
+            - nginx

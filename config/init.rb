@@ -8,16 +8,27 @@ require 'yaml'
 Visage::Config.use do |c|
   c['fallback_colors'] = YAML::load(File.read(File.join(__DIR__, 'fallback-colors.yaml')))
  
+  # Load profiles (config/profiles.yaml + config/*-profiles.yaml)
+  profiles_config_files = Dir.glob(__DIR__+"/*-profiles.yaml")
   profile_filename = File.join(__DIR__, 'profiles.yaml')
   unless File.exists?(profile_filename)
     puts "You need to specify a list of profiles in config/profile.yaml!"
     puts "Check out config/profiles.yaml.sample for an example."
     exit 1
   end
-  YAML::load(File.read(profile_filename)).each_pair do |key, value|
+  profiles_config_files.insert(0, profile_filename)
+  
+  profiles_string = ""
+  profiles_config_files.each do |f|
+    profiles_string += File.read(f)
+  end
+  puts profiles_string
+  
+  YAML::load(profiles_string).each_pair do |key, value|
     c[key] = value
   end
 
+  # Load colors
   plugin_colors_filename = File.join(__DIR__, 'plugin-colors.yaml')
   unless File.exists?(plugin_colors_filename)
     puts "It's highly recommended you specify graph line colors in config/plugin-colors.yaml!"

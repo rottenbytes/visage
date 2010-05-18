@@ -32,12 +32,3 @@ profiles:
       - nginx
     splat: nginx
     order: 6
-    
-# Commentaire toussa
-azote:
-  CPU + Load:
-    plugins:
-      - cpu-0
-      - load
-    splat: cpu+load
-    order: 1
