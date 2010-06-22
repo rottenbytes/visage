@@ -100,75 +100,68 @@ var visageGraph = new Class({
     // assemble data to graph, then draw it
     graphData: function(data) {
 
-        this.ys        = []
-        this.colors    = []
-        this.instances = []
-        this.metrics   = []
+        this.buildContainers();
 
-        var host = this.options.host
-        var plugin = this.options.plugin
+        this.y = []
+        this.colors = []
+        this.pluginInstanceNames = []
+        this.pluginInstanceDataSources = []
+        this.intervals = new Hash()
 
-        $each(data[host][plugin], function(instance, iname) {
-            $each(instance, function(metric, mname) {
-                this.colors.push(metric.color)
-                if ( !$defined(this.x) ) {
-                    this.x = this.buildXAxis(metric)
-                }
-                this.ys.push(metric.data)
-                this.instances.push(iname) // labels
-                this.metrics.push(mname) // labels
-            }, this);
+        $each(data[this.options.host][this.options.plugin], function(pluginInstance, pluginInstanceName) {
+            startTime = pluginInstance.splice(0,1)
+            endTime = pluginInstance.splice(0,1)
+            dataSources = pluginInstance.splice(0,1)
+            dataSets = pluginInstance.splice(0,1)
+       
+            this.intervals.set('start', startTime);
+            this.intervals.set('end', endTime);
+            this.pluginInstanceNames.push(pluginInstanceName)
+            this.populateDataSources(dataSources);
+
+            // color names are not structured consistently - extract them
+            colors = pluginInstance.splice(0,10)
+            this.populateColors(colors);
+
+            axes = this.extractYAxes(dataSources, dataSets)
+            // sometimes we have multiple datapoints in a dataset (eg load/load)
+            axes.each(function(axis) { this.y.push(axis) }, this);
         }, this);
 
-        this.buildContainers();
-        this.drawGraph();
+      
+        this.canvas.g.txtattr.font = "11px 'sans-serif'";
 
-        this.buildLabels();
+        var start = this.intervals.get('start')[0]
+        var end = this.intervals.get('end')[0]
+        var increment = (end - start) / this.y[0].length;
+
+        x = [];
+
+        var counter = start;
+        while (counter < end) {
+            x.push(counter)
+            counter += increment
+        }
+
+        this.graph = this.canvas.g.linechart(this.options.leftEdge, this.options.topEdge, this.options.gridWidth, this.options.gridHeight, x, this.y, {
+                            nostroke: false, 
+                            shade: false, 
+                            width: 1.5,
+                            axis: "0 0 1 1", 
+                            colors: this.colors, 
+                            axisxstep: x.length / 20,
+                            shade: this.options.shade
+        });
+
+        this.formatAxes();
         this.addSelectionInterface();
-        this.addDebugInterface();
+
+        this.buildLabels(this.graph.lines, this.pluginInstanceNames, this.pluginInstanceDataSources, this.colors);
         this.buildDateSelector();
 
         /* disabling this for now for dramatic effect
         this.buildEmbedder();
         */
-    },
-    buildXAxis: function(metric) {
-        var start    = metric.start.toInt(),
-            finish   = metric.finish.toInt(),
-            length   = metric.data.length,
-            interval = (finish - start) / length,
-            counter  = start,
-            x        = []
-
-        while (counter < finish) {
-            x.push(counter)
-            counter += interval 
-        }
-        return x
-    },
-    drawGraph: function() {
-
-        var colors = this.colors;
-        var left   = this.options.leftEdge
-        var top    = this.options.topEdge
-        var width  = this.options.gridWidth
-        var height = this.options.gridHeight
-        var x      = this.x  // x axis
-        var ys     = this.ys // y axes 
-        var xstep  = x.length / 20
-        var shade  = this.options.shade
-
-        this.canvas.g.txtattr.font = "11px 'sans-serif'";
-        this.graph = this.canvas.g.linechart(left, top, width, height, x, ys, {
-                            nostroke: false, 
-                            width: 1.5,
-                            axis: "0 0 1 1", 
-                            colors: colors, 
-                            axisxstep: xstep,
-                            shade: shade
-        });
-
-        this.formatAxes();
     },
     formatAxes: function() {
 
@@ -264,14 +257,6 @@ var visageGraph = new Class({
         code += "}); });</script>"
         return code.replace('<', '&lt;').replace('>', '&gt;')
     },
-    addDebugInterface: function() {
-        var graph = this.graph;
-        /*
-        graph.hoverColumn(function () {
-            console.log([this.axis])
-        });
-        */
-    },
     addSelectionInterface: function() {
         var graph = this.graph;
         var parentElement = this.parentElement
@@ -285,22 +270,22 @@ var visageGraph = new Class({
                 graph.selectionMade = false
                 graph.selection = this.paper.rect(this.x, 0, 1, gridHeight);
                 graph.selection.toBack();
-                graph.selection.attr({fill: '#555', stroke: '#555', opacity: 0.4});
-                graph.selectionStart = this.axis.toInt()
+                graph.selection.attr({'fill': '#000'});
+                graph.selectionStart = this.axis
             } else {
                 graph.selectionMade = true
-                graph.selectionFinish = this.axis.toInt()
+                graph.selectionEnd = this.axis
                 var select = $(parentElement).getElement('div.timescale.container select')
                 var hasSelected = select.getChildren('option').some(function(option) {
                     return option.get('html') == 'selected'
                 });
                 if (!hasSelected) {
-                    var option = new Element('option', {
-                        html: 'selected',
-                        value: '',
-                        selected: true
-                    });
-                    select.grab(option)
+	                var option = new Element('option', {
+	                    html: 'selected',
+	                    value: '',
+	                    selected: true
+	                });
+	                select.grab(option)
                 }
             }
         });
@@ -388,19 +373,18 @@ var visageGraph = new Class({
                             data = new Hash()
                             if (e.target.getElement('select').getSelected().get('html') == 'selected') {
                                 data.set('start', this.graph.selectionStart);
-                                data.set('finish', this.graph.selectionFinish);
+                                data.set('end', this.graph.selectionEnd);
                             } else {
-                                e.target.getElement('select').getSelected().each(function(option) {
-                                    split = option.value.split('=')
-                                    data.set(split[0], split[1])
-                                    currentTimePeriod = option.get('html') // is this setting a global?
-                                }, this);
+	                            e.target.getElement('select').getSelected().each(function(option) {
+	                                split = option.value.split('=')
+	                                data.set(split[0], split[1])
+	                                currentTimePeriod = option.get('html') // is this setting a global?
+	                            }, this);
                             }
                             this.requestData = data
 
                             /* Nuke graph + labels. */
                             this.graph.remove();
-                            delete this.x;
                             $(this.labelsContainer).empty();
                             $(this.timescaleContainer).empty();
                             $(this.embedderContainer).empty();
@@ -438,15 +422,28 @@ var visageGraph = new Class({
             form.grab(submit);
             container.grab(form);
     },
-    buildLabels: function() {
-    //buildLabels: function(graphLines, instanceNames, dataSources, colors) {
+    buildLabels: function(graphLines, instanceNames, dataSources, colors) {
 
-        this.ys.each(function(set, index) {
-            var path     = this.graph.lines[index],
-                color    = this.colors[index]
-                plugin   = this.options.plugin
-                instance = this.instances[index]
-                metric   = this.metrics[index]
+        dataSources.each(function(ds, index) {
+            var path = graphLines[index];
+            var color = colors[index]
+            
+            var instanceName = instanceNames[index]
+
+            // generic ds name, attempt to specialise
+            if (ds == 'value') {
+                if (instanceName.match(/-/)) {
+                    var name = instanceName.split('-')[1]
+                } else {
+                    var name = instanceName
+                }
+            // disk operations
+            } else if (ds == 'read' || ds == 'write') {
+                var instanceName = instanceNames[Math.round((index -1) / 2)]
+                var name = instanceName.split('_')[1] + '-' + ds
+            } else {
+                var name = ds
+            }
 
             var container = new Element('div', {
                 'class': 'label plugin',
@@ -475,7 +472,7 @@ var visageGraph = new Class({
             });
 
             var box = new Element('div', {
-                'class': 'label plugin box ' + metric,
+                'class': 'label plugin box ' + instanceName,
                 'html': '&nbsp;',
                 'styles': { 
                       'background-color': color,
@@ -485,18 +482,9 @@ var visageGraph = new Class({
                       'margin-right': '0.5em'
                 }
             });
-     
-            // plugin/instance/metrics names can be unmeaningful. make them pretty
-            var name;
-            name = instance.replace(plugin, '');
-            name = name.replace('tcp_connections', '')
-            name = name.replace('ps_state', '')
-            name = name.replace(plugin.split('-')[0], '')
-            name += metric == "value" ? "" : " (" + metric + ")"
-            name = name.replace(/^[-|_]*/, '')
-
+        
             var desc = new Element('span', {
-                'class': 'label plugin description ' + metric,
+                'class': 'label plugin description ' + instanceName,
                 'html': name
             });
 
@@ -505,53 +493,55 @@ var visageGraph = new Class({
             $(this.labelsContainer).grab(container);
 
         }, this);
-        
-        // Begin flonumero
-        
-        var container = new Element('div', {
-           'class': 'label plugin',
-           'styles': {
-               'padding': '0.2em 0.5em 0',
-               'float': 'left',
-               'width': '180px',
-               'font-size': '0.8em'
-           },
-           'events': {
-               
-               'click': function(e) {
-                   e.stop();
-
-                   var newOpacity=this.graph.lines[0].attr('opacity') == 0 ?  1 : 0;
-        
-                   for( var index in this.graph.lines)
-                   {
-                       this.graph.lines[index].animate({'opacity': newOpacity}, 350)
-                   }
-               }
-           }
-       });
-        var box = new Element('div', {
-           'class': 'label plugin box ',
-           'html': '&nbsp;',
-           'styles': { 
-                 'background-color': 'darkred', // a changer 
-                 'width': '48px',
-                 'height': '18px',
-                 'float': 'left',
-                 'margin-right': '0.5em'
-           }
-       });
-        var desc = new Element('span', {
-           'class': 'label plugin description ' ,
-           'html':'toggle all'
-       });
-       
-       container.grab(box);
-       container.grab(desc);
-       $(this.labelsContainer).grab(container);
-       // End of flonumero
-       
-       
-       
     },
+    /* recurse through colours data structure and generate a list of colours */
+    populateColors: function(nestedColors) {
+            switch($type(nestedColors)) {
+                case 'array':
+                    nestedColors.each(function(c) {
+                        this.populateColors(c);
+                    }, this);
+                    break
+                case 'string':
+                    this.colors.push(nestedColors);
+                    break
+                default: 
+                    $each(nestedColors, function(c) {
+                        this.populateColors(c)
+                    }, this);
+            }
+    },
+    /* recurses, normalised data sources */
+    populateDataSources: function (dataSources) {
+        switch($type(dataSources)) {
+            case 'array': 
+                dataSources.each(function(ds) {
+                    this.populateDataSources(ds)
+                }, this);
+                break
+            case 'string': 
+                this.pluginInstanceDataSources.push(dataSources);
+                break
+            default: 
+                $each(dataSources, function(ds) {
+                    this.populateDataSources(ds)
+                }, this);
+        }
+    },
+    // separates the datasets into separate y-axes, suitable for passing to g.raphael 
+    extractYAxes: function(dataSources, dataSets) {
+        y = []
+        dataSources[0].length.times(function() { y.push([]) });
+
+        dataSets[0].each(function(primaryDataPoints) {
+            primaryDataPoints.each(function(pdp, index) {
+                // the last few pdps tend to be NaNs. normalise
+                value = isNaN(pdp) ? 0 : pdp
+                y[index].push(value)
+            });
+        });
+
+        return y
+    }
 })
+

@@ -87,6 +87,14 @@ module Visage
             def all
                 Visage::Config.sets
             end
+            
+            def write(sets)
+                __DIR__ = File.expand_path(File.dirname(__FILE__))
+                
+                #fp = File.open(__DIR__+"/../config/sets.yaml","w")
+                #YAML.dump(sets.to_yaml,fp)
+                #fp.close
+            end
         end
     end
     

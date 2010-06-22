@@ -27,8 +27,3 @@ profiles:
       - interface
     splat: interfaces
     order: 5
-  Nginx:
-    plugins:
-      - nginx
-    splat: nginx
-    order: 6

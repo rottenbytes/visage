@@ -1,22 +1,9 @@
 %div#nav
   %div#groups.nav
-    %h2 Groups
     %ul
       - if !Visage::Config.rrddir
         %li
-          You need to specify <strong>rrddir</strong> in config/init.rb!
-      - elsif @groups.empty?
-        %li
-          No groups found. Please check <strong>rrddir</strong> in config/init.rb!
-      - else
-        - @groups.each_pair do |group, hosts|
-          %p.groupes
-          %a{:href => "#", :onclick => "showHide('#{group}')" } #{group.capitalize}
-          %div{:id => group, :style => "display:none"}
-            - hosts.each do |h|
-              %li
-                %a{:href => "/#{h}"} #{h}
-          
+          You need to specify <strong>rrddir</strong> in config/init.rb!          
 
   - if host = params[:host]
     %div#profiles.nav

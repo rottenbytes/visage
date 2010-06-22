@@ -1,6 +1,6 @@
 %div#nav
   %div#groups.nav
-    %h2 Sets
+    %h2 Available Sets
     %ul
       - if !Visage::Config.rrddir
         %li
@@ -9,10 +9,11 @@
         %li
           No sets found. Please check your sets config file (see config/init.rb)
       - else
-        - @sets.each_key do |set|
-          %p.set
-          %a{:href => "/sets/"+set } #{set.capitalize}
-          
+        %form{:name => "selection"}
+          %select{:name => "hosts", :onchange => "jumpto(this.value)"}
+            %option{:value=>nil} 
+            - @sets.each_key do |s|
+              %option{:value => "sets/"+s} #{s}         
 
   - if set = params[:set]
     - @sets[set]["graphs"].each do |hosts|

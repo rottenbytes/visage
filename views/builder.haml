@@ -1,0 +1,84 @@
+%div#nav
+  %div#builder.nav
+  %h2 Sets builder
+  %hr
+  %p   
+  - if !(set = params[:set])
+    %h3 Modify a set
+
+    %form{:name => "selection"}
+      %select{:name => "hosts", :onchange => "jumpto(this.value)"}
+        %option{:value=>nil} 
+        - @sets.each_key do |s|
+          %option{:value => "builder/"+s} #{s}
+    
+    %p
+    
+    %h3 Create a new set
+    %form{:name => "creation"}
+      %input{:type => "text", :name => "setname"}
+      %input{:type => "submit", :value => "Add"}
+  
+    %p
+  
+    %h3 Clone a set
+    %form{:name => "clone", :method => "POST", :action => "builder/clone" }
+      %select{:name => "clonesource" }
+        %option{:value=>nil} 
+        - @sets.each_key do |s|
+          %option{:value => s} #{s}
+      to
+      %input{:type => "text", :name => "clonedest" }
+      %input{:type => "submit", :value => "Clone" }
+      
+      %p
+      
+    %h3 Delete a set
+    %form{:name => "delete", :method => "POST", :action => "builder/delete" }
+      %select{:name => "setdelete" }
+        %option{:value=>nil} 
+        - @sets.each_key do |s|
+          %option{:value => s} #{s}
+      %input{:type => "submit", :value => "Delete" }
+          
+  - else
+    %p
+    %h3 Editing #{set}
+    %p
+    %div#tools
+      %div{:align => "right"}
+        Host :
+        %select{:name => "Hosts", :id => "Hosts" }
+          %option{:value=>nil} 
+          - @hosts.each do |h|
+            %option{:value => h} #{h}
+        %br
+        Metric :
+        %select{:name => "Metrics", :id => "Metrics" }
+          %option{:value=>nil} 
+          - @metrics.each do |m|
+            %option{:value => m} #{m}
+        %p
+        %input{:type => "button", :value => "Add to this set", :id => "btnAdd", :class => "button" }
+        %p
+        %div#littletext 
+          Select a host & a metric and click add or double click to delete
+          %br
+          drag and drop to change order  
+    %p
+    %div#usedmetrics
+      %ul{:id => "sortable" }
+        - if (@sets[set] != nil)
+          - @sets[set]["graphs"].each do |g|
+            - g.keys.each do |host|
+              - g.values.each do |metrics|
+                - metrics.each do |metric|
+                  %li{:class => "ui-state-default", :id => "metric"}
+                    #{host} / #{metric} 
+                    %br
+                  
+        - else
+          %li{:class => "ui-state-default", :id => "metric"} delete me after adding 1st entry
+      %p
+      %input{:type => "button", :value => "Save", :id => "btnSave", :class => "button" }
+        

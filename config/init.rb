@@ -22,7 +22,6 @@ Visage::Config.use do |c|
   profiles_config_files.each do |f|
     profiles_string += File.read(f)
   end
-  puts profiles_string
   
   YAML::load(profiles_string).each_pair do |key, value|
     c[key] = value

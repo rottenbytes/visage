@@ -24,7 +24,7 @@ class CollectdJSON
     host             = opts[:host]
     plugin           = opts[:plugin]
     plugin_instances = opts[:plugin_instances][/\w.*/]
-    instances        = plugin_instances.nil? ? '*' : '{' + plugin_instances.split('/').join(',') + '}'
+    instances        = plugin_instances.blank? ? '*' : '{' + plugin_instances.split('/').join(',') + '}'
     @colors          = opts[:plugin_colors]
     @plugin_names = []
 
